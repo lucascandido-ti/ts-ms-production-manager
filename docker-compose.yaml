@@ -1,0 +1,17 @@
+version: '3.9'
+
+services:
+  mongodb:
+    build:
+      context: ./docker/mongo
+      args:
+        MONGO_VERSION: 4
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+      MONGO_INITDB_DATABASE: production-manager
+      MONGO_REPLICA_HOST: localhost
+      MONGO_REPLICA_PORT: 27018
+      MONGO_COMMAND: mongo
+    ports:
+      - '27018:27018'
