@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Transport } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
+import { Config } from './config';
 
 interface IQueueOptions {
   urls: string[];
@@ -19,11 +21,11 @@ interface IQueueInfo {
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  const queues = [
-    'order-service-queue',
-    'payment-service-queue',
-    'production-service-queue',
-  ];
+  const configService = app.get(ConfigService);
+  const config = (configService as unknown as { internalConfig: Config })
+    .internalConfig;
+
+  const queues = ['order-service-queue'];
 
   const infoQueue: IQueueInfo = {
     transport: Transport.RMQ,
@@ -41,6 +43,8 @@ async function bootstrap() {
   }
 
   await app.startAllMicroservices();
-  await app.listen(3000);
+
+  app.setGlobalPrefix(config.api.prefix);
+  await app.listen(+config.api.port);
 }
 bootstrap();

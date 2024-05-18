@@ -1,21 +1,18 @@
 import {
   IsArray,
   IsEnum,
-  IsInstance,
   IsNotEmpty,
   IsNumber,
   IsString,
   ValidateNested,
 } from 'class-validator';
 
-import { IOrder } from '../interfaces';
 import { AcceptedCurrencies, OrderStatus } from '../enums';
 
-import { Product } from '@/core/domain/product';
-import { Customer } from '@/core/domain/customer';
 import { PaymentMethod } from '../../utils';
+import { Customer, Product } from '@prisma/client';
 
-export class Order implements IOrder {
+export class Order {
   @IsString()
   @IsNotEmpty()
   Id: number;
@@ -40,7 +37,6 @@ export class Order implements IOrder {
   @IsNotEmpty()
   PaymentMethod: PaymentMethod;
 
-  @IsInstance(Customer)
   @ValidateNested()
   Customer: Customer;
 
