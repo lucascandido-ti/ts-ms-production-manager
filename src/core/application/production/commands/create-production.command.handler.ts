@@ -20,12 +20,9 @@ export class CreateProductionCommandHandler
   ) {}
 
   async execute({ request }: CreateProductionCommand) {
-    this.logger.debug(`Request: ${JSON.stringify(request.order)}`);
     const production = await this._productionRepository.CreateProduction(
       request.order,
     );
-
-    this.logger.debug(`CreateProduction: ${JSON.stringify(production)}`);
 
     const productionDto = new ProductionDto().MapToDTO(production);
 

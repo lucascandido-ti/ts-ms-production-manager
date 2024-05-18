@@ -25,7 +25,7 @@ async function bootstrap() {
   const config = (configService as unknown as { internalConfig: Config })
     .internalConfig;
 
-  const queues = ['order-service-queue'];
+  const queues = ['order-service-queue.send-order-to-production'];
 
   const infoQueue: IQueueInfo = {
     transport: Transport.RMQ,
