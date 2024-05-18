@@ -1,13 +1,19 @@
+import { RabbitMQRepository } from '@/adapters/rabbitMQ/rabbitmq.repository';
 import { PrismaService } from '@/config';
+import { QUEUE_REPOSITORY } from '@/config/dependecy-injection';
 import { ProductionStatus } from '@/core/domain/production';
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class ProductionWorkflowWorker implements OnModuleInit {
   private readonly logger = new Logger(ProductionWorkflowWorker.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(QUEUE_REPOSITORY)
+    private readonly rabbitMQRepository: RabbitMQRepository,
+  ) {}
 
   onModuleInit() {
     this.logger.log(
@@ -18,19 +24,29 @@ export class ProductionWorkflowWorker implements OnModuleInit {
   @Cron('*/2 * * * *')
   async handleCron() {
     try {
-      this.logger.debug(`CRON ${ProductionWorkflowWorker.name} started...`);
+      this.logger.debug(`Started CRON ${ProductionWorkflowWorker.name}`);
       const productionsInPreparation = await this.prisma.production.findMany({
         where: { status: ProductionStatus.IN_PREPARATION },
       });
 
       if (productionsInPreparation.length) {
         for await (const production of productionsInPreparation) {
-          await this.prisma.production.update({
+          const updatedProdution = await this.prisma.production.update({
             data: {
               status: ProductionStatus.CONCLUDED,
             },
             where: { id: production.id },
           });
+
+          const fullProduction = await this.prisma.production.findUnique({
+            where: { id: updatedProdution.id },
+            include: { order: true },
+          });
+
+          this.rabbitMQRepository.publish(
+            fullProduction,
+            'concluded-production',
+          );
         }
       }
 
@@ -41,20 +57,28 @@ export class ProductionWorkflowWorker implements OnModuleInit {
       if (!productions) return;
 
       for await (const production of productions) {
-        await this.prisma.production.update({
+        const updatedProdution = await this.prisma.production.update({
           data: {
             status: ProductionStatus.IN_PREPARATION,
           },
           where: { id: production.id },
         });
+
+        const fullProduction = await this.prisma.production.findUnique({
+          where: { id: updatedProdution.id },
+          include: { order: true },
+        });
+
+        this.rabbitMQRepository.publish(fullProduction, 'start-production');
       }
-      this.logger.debug(`CRON ${ProductionWorkflowWorker.name} finished...`);
+
+      this.logger.debug(`Finished CRON ${ProductionWorkflowWorker.name}`);
     } catch (error) {
       this.logger.debug(
-        `CRON ${ProductionWorkflowWorker.name} Error: ${error.message}`,
+        `Failed CRON ${ProductionWorkflowWorker.name} Error: ${error.message}`,
       );
     } finally {
-      this.logger.debug(`CRON ${ProductionWorkflowWorker.name} finished...`);
+      this.logger.debug(`Finished CRON ${ProductionWorkflowWorker.name}`);
     }
   }
 }

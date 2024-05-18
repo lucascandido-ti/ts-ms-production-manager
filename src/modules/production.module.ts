@@ -6,12 +6,14 @@ import { PrismaService } from '@/config';
 import {
   PRODUCTION_REPOSITORY,
   PRODUCTION_SERVICE,
+  QUEUE_REPOSITORY,
 } from '@/config/dependecy-injection';
 
 import { ProductionController } from '@/consumers';
 import { ProductionRepository } from '@/adapters/data';
 import { CreateProductionCommandHandler } from '@/core/application/production/commands';
 import { ProductionWorkflowWorker } from '@/core/application/production/workers';
+import { RabbitMQRepository } from '@/adapters/rabbitMQ/rabbitmq.repository';
 
 const httpControllers = [ProductionController];
 const handlers: Provider[] = [CreateProductionCommandHandler];
@@ -19,6 +21,7 @@ const services: Provider[] = [PrismaService];
 const workers: Provider[] = [ProductionWorkflowWorker];
 const repositories: Provider[] = [
   { provide: PRODUCTION_REPOSITORY, useClass: ProductionRepository },
+  { provide: QUEUE_REPOSITORY, useClass: RabbitMQRepository },
 ];
 
 @Module({
