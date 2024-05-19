@@ -31,7 +31,7 @@ const repositories: Provider[] = [
         name: PRODUCTION_SERVICE,
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://guest:guest@localhost:5672'],
+          urls: [process.env.RABBITMQ_URL],
           queue: 'production-service-queue',
           queueOptions: {
             durable: true,

@@ -30,7 +30,7 @@ async function bootstrap() {
   const infoQueue: IQueueInfo = {
     transport: Transport.RMQ,
     options: {
-      urls: ['amqp://guest:guest@localhost:5672'],
+      urls: [process.env.RABBITMQ_URL],
       queueOptions: {
         durable: true,
       },

@@ -56,9 +56,9 @@ export function getConfigJsonLocal(): Record<string, unknown> {
 
 // Se for testar localmente, alterar a função de captura de configurações para getConfigJsonLocalHost
 
-// const configService = new ConfigService();
+const configService = new ConfigService();
 
 export const configModuleOptions = getConfigModuleOptions(
   Config,
-  getConfigJsonLocal(),
+  getConfigJsonConfigMap(configService),
 );
