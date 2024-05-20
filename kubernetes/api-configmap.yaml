@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-production-settings
+data:
+  settings.json: |
+    {
+      "api": {
+        "port": "6000",
+        "prefix": "api",
+        "cache": {
+          "max": 1000,
+          "ttl": 60
+        },
+        "throttler": {
+          "limit": 1000,
+          "ttl": 60
+        },
+        "rabbitmq":{
+          "name": "PRODUCTION_SERVICE",
+          "options": {
+            "urls": ["amqp://guest:guest@svc-rmq-queue:5672"],
+            "queue": "production-service-queue",
+            "queueOptions": {
+              "durable": true
+            }
+          }
+        }
+      }
+    }
