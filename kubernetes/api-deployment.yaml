@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ts-ms-productionmanager-deployment
+spec:
+  template:
+    metadata:
+      name: ts-ms-productionmanager-deployment
+      labels:
+        app: ts-ms-productionmanager-deployment
+    spec:
+      containers:
+        - name: ts-ms-productionmanager-deployment
+          image: lucascandido/ts-ms-productionmanager:v3
+          ports:
+            - containerPort: 6000
+          env:
+            - name: MY_SETTINGS
+              valueFrom:
+                configMapKeyRef:
+                  name: api-production-settings
+                  key: settings.json
+          resources:
+            limits:
+              memory: 512Mi
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ts-ms-productionmanager-deployment
