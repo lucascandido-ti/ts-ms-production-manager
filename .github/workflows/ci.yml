@@ -1,0 +1,67 @@
+name: Tech Challenge - Production Manager - CI
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  setup:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Yarn
+        run: npm install -g yarn
+
+      - name: Install Dependencies
+        run: yarn --force --frozen-lockfile
+
+      - name: Copy settings file
+        run: cp ./src/config/settings.template ./src/config/settings.json
+
+      - name: Setup envsubst
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gettext-base
+
+      - name: Substitute environment variables in .env
+        run: |
+          envsubst < .env.template > .env
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PWD: ${{ secrets.DB_PWD }}
+          RMQ_HOST: ${{ secrets.RMQ_HOST }}
+          RMQ_USER: ${{ secrets.RMQ_USER }}
+          RMQ_PWD: ${{ secrets.RMQ_PWD }}
+
+      - name: Build project
+        run: yarn build
+
+      - name: Test application
+        run: yarn test:e2e
+
+  sonarcloud:
+    needs: setup
+    name: SonarCloud
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
